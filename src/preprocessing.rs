@@ -1,6 +1,9 @@
 use std::cmp::{max, min};
 use std::collections::{HashSet, HashMap, VecDeque};
-use ndarray::{Array2, Array3, Array5};
+use std::path::Path;
+use std::fs;
+use zune_inflate::DeflateDecoder;
+use ndarray::{Array2, Array3, Array5, ShapeBuilder};
 use ndarray_npy::{read_npy, write_npy};
 use crate::{util::{adj_positions, free_direction}};
 
@@ -19,7 +22,7 @@ impl Process {
     }
 
     fn walk_range(&mut self, x: usize, y: usize, floor: usize) -> Vec<(usize, usize, usize)> {
-        let mut tiles = Vec::new();
+        let mut tiles = Vec::with_capacity(25);
         let start = self.get_movement_data(x, y, floor);
         let adj = adj_positions(x, y);
         let mut visited = HashSet::new();
@@ -47,6 +50,16 @@ impl Process {
             }
         }
         tiles
+    }
+
+    fn bd_range(&mut self, x: usize, y: usize, floor: usize) -> Vec<(usize, usize, usize)> {
+        let mut set = HashSet::new();
+
+        set.into_iter().collect()
+    }
+
+    fn bd_range_recursion(&mut self, x: usize, y: usize, floor: usize, direction: usize, horizontal: usize, vertical: usize, dist_x: usize, dist_y: usize, tiles: HashSet<(usize, usize)>) {
+
     }
 
     fn get_movement_data(&mut self, x: usize, y: usize, floor: usize) -> u8 {
@@ -81,6 +94,42 @@ impl Process {
         }
         (walk_data as u64, (walk_data >> 64) as u64)
     }
+
+    fn process_bd_data(&mut self, x: usize, y: usize, floor: usize) -> [u64; 7] {
+        let tiles = self.bd_range(x, y, floor);
+        let mut bd_data = [0, 0, 0, 0, 0, 0, 0];
+        for tile in tiles {
+            let u = x - 10;
+            let v = y - 10;
+            if tile.0 < RS_LENGTH && tile.1 < RS_HEIGHT {
+                let temp = ((tile.1 - v) * 21 + (tile.0 - u));
+                let i = temp / 64;
+                let j = temp % 64;
+                bd_data[i] += 1 << j;
+            }
+        }
+        bd_data
+    }
+}
+
+pub fn build_movement_array(chunk_x: usize, chunk_y: usize, floor: usize) -> Array2<u8> {
+    let path = format!("MapData/Map/collision-{chunk_x}-{chunk_y}-{floor}.bin");
+    let data = fs::read(path).unwrap();
+    let mut decoder = DeflateDecoder::new(&data);
+    let decompressed_data = decoder.decode_zlib().unwrap();
+    Array2::from_shape_vec((1280, 1280).f(), decompressed_data).unwrap()
+}
+
+fn process_movement_data() {
+    for i in 0..5 {
+        for j in 0..10 {
+            for k in 0..4 {
+                let arr = build_walk_array(i, j ,k);
+                let path = format!("MapData/Map/move-{i}-{j}-{k}.npy");
+                write_npy(path, &arr).unwrap();
+            }
+        }
+    }
 }
 
 fn build_walk_array(chunk_x: usize, chunk_y: usize, floor: usize) -> Array3<u64> {
@@ -99,15 +148,31 @@ fn build_walk_array(chunk_x: usize, chunk_y: usize, floor: usize) -> Array3<u64>
 }
 
 pub fn process_walk_data() {
-    for i in 0..4 {
-        for j in 0..10 {
-            for k in 0..20 {
-                let arr = build_walk_array(j, k ,i);
-                let path = format!("MapData/Walk/walk-{j}-{k}-{i}.npy");
+    for i in 0..10 {
+        for j in 0..20 {
+            for k in 0..4 {
+                let arr = build_walk_array(i, j ,k);
+                let path = format!("MapData/Walk/walk-{i}-{j}-{k}.npy");
                 write_npy(path, &arr).unwrap();
             }
         }
     }
+}
+
+fn build_bd_array(chunk_x: usize, chunk_y: usize, floor: usize) -> Array3<u64> {
+    Array3::zeros([640, 640, 7])
+}
+
+fn process_bd_data() {
+
+}
+
+fn build_se_array(chunk_x: usize, chunk_y: usize, floor: usize) -> Array3<u8> {
+    Array3::zeros([640, 640, 8])
+}
+
+fn process_se_data() {
+
 }
 
 pub fn process_heuristic_data(max_distance: usize) {
@@ -172,6 +237,66 @@ impl Memo {
     }
 }
 
+pub fn setup(reset: bool) {
+    if !Path::new("HeuristicData/l_infinity_cds.npy").try_exists().unwrap() || reset {
+        process_heuristic_data(400);
+    }
+    let mut moves = true;
+    for i in 0..5 {
+        for j in 0..10 {
+            for k in 0..4 {
+                let path = format!("MapData/Map/move-{i}-{j}-{k}.npy");
+                if !Path::new(&path).try_exists().unwrap() {
+                    moves = false;
+                }
+            }
+        }
+    }
+    if !moves || reset {
+        process_movement_data();
+    }
+    let mut walk = true;
+    for i in 0..10{
+        for j in 0..20 {
+            for k in 0..4 {
+                let path = format!("MapData/Walk/walk-{i}-{j}-{k}.npy");
+                if !Path::new(&path).try_exists().unwrap() {
+                    walk = false;
+                }
+            }
+        }
+    }
+    if !walk || reset {
+        process_walk_data();
+    }
+    let mut bd = true;
+    for i in 0..10 {
+        for j in 0..20 {
+            for k in 0..4 {
+                let path = format!("MapData/BD/bd-{i}-{j}-{k}.npy");
+                if !Path::new(&path).try_exists().unwrap() {
+                    bd = false;
+                }
+            }
+        }
+    }
+    if !bd || reset {
+        process_bd_data();
+    }
+    let mut se = true;
+    for i in 0..10 {
+        for j in 0..20 {
+            for k in 0..4 {
+                let path = format!("MapData/SE/se-{i}-{j}-{k}.npy");
+                if !Path::new(&path).try_exists().unwrap() {
+                    se = false;
+                }
+            }
+        }
+    }
+    if !se || reset {
+        process_se_data();
+    }
 
-
+}
 

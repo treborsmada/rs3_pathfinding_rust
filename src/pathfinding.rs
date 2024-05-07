@@ -38,7 +38,7 @@ pub fn a_star_end_buffer(start: State, end: (u16, u16), map: &MapSection, heuris
     while !queue.is_empty() {
         let current_node =  queue.pop().unwrap().1;
         count += 1;
-        if end.0 - 1 <= current_node.pos_x && current_node.pos_x <= end.0 + 1  && end.1 - 1 <= current_node.pos_y && current_node.pos_y <= end.1 + 1{
+        if current_node.at_goal(&end) {
             println!("{count}");
             return reconstruct_path(came_from, current_node);
         }
@@ -50,7 +50,7 @@ pub fn a_star_end_buffer(start: State, end: (u16, u16), map: &MapSection, heuris
             let f_score = tentative_g_score + heuristic.h(&next_node, end);
             queue.push(Reverse(f_score), next_node.clone());
         }
-        let walk_range = map.walk_range(current_node.pos_x, current_node.pos_y);
+        let walk_range = map.walk_range_2(current_node.pos_x, current_node.pos_y);
         for pos in walk_range {
             let next_node = current_node.r#move(pos.0, pos.1, pos.2).update();
             if !g_score.contains_key(&next_node) || tentative_g_score < *g_score.get(&next_node).unwrap() {
@@ -71,7 +71,7 @@ pub fn a_star_end_buffer(start: State, end: (u16, u16), map: &MapSection, heuris
             }
         }
         if current_node.can_bd() {
-            let bd_range = map.bd_range(current_node.pos_x, current_node.pos_y);
+            let bd_range = map.bd_range_2(current_node.pos_x, current_node.pos_y);
             for pos in bd_range {
                 let next_node = current_node.bd(pos.0, pos.1, pos.2);
                 if !g_score.contains_key(&next_node) || tentative_g_score < *g_score.get(&next_node).unwrap() {
@@ -106,7 +106,7 @@ impl Heuristic {
             data
         }
     }
-    fn h(&self, state: &State, end: (u16, u16)) -> usize{
+    pub fn h(&self, state: &State, end: (u16, u16)) -> usize{
         let distance = (max(state.pos_x.abs_diff(end.0), state.pos_y.abs_diff(end.1)) - 1) as usize;
         self.data[[distance, state.secd as usize, state.scd as usize, state.ecd as usize, state.bdcd as usize]] as usize
     }
