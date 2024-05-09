@@ -1,11 +1,11 @@
-use rs3_pathfinding::{map_section, pathfinding, state, pathfinding2_test, preprocessing};
+use rs3_pathfinding::{map_section, pathfinding, state, pathfinding2_test};
 use std::cmp::{max, min};
-use std::time::Instant;
-use ndarray_npy::read_npy;
-use ndarray::{Array2, Order};
+use std::time::{Instant};
+
 
 
 fn main() {
+    rs3_pathfinding::preprocessing::setup(false);
     let floor = 0;
     let start = state::State {
         pos_x: 2125,
@@ -27,8 +27,6 @@ fn main() {
     let (path, moves)  = pathfinding2_test::a_star_end_buffer(start, end, &section, heuristic);
     let elapsed = now.elapsed();
     println!("{:?}", moves);
-    // println!("{:?}", moves.len());
     println!("{:?}", path);
     println!("Elapsed: {:.2?}", elapsed);
-
 }

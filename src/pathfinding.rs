@@ -50,7 +50,7 @@ pub fn a_star_end_buffer(start: State, end: (u16, u16), map: &MapSection, heuris
             let f_score = tentative_g_score + heuristic.h(&next_node, end);
             queue.push(Reverse(f_score), next_node.clone());
         }
-        let walk_range = map.walk_range_2(current_node.pos_x, current_node.pos_y);
+        let walk_range = map.walk_range(current_node.pos_x, current_node.pos_y);
         for pos in walk_range {
             let next_node = current_node.r#move(pos.0, pos.1, pos.2).update();
             if !g_score.contains_key(&next_node) || tentative_g_score < *g_score.get(&next_node).unwrap() {
@@ -71,7 +71,7 @@ pub fn a_star_end_buffer(start: State, end: (u16, u16), map: &MapSection, heuris
             }
         }
         if current_node.can_bd() {
-            let bd_range = map.bd_range_2(current_node.pos_x, current_node.pos_y);
+            let bd_range = map.bd_range(current_node.pos_x, current_node.pos_y);
             for pos in bd_range {
                 let next_node = current_node.bd(pos.0, pos.1, pos.2);
                 if !g_score.contains_key(&next_node) || tentative_g_score < *g_score.get(&next_node).unwrap() {

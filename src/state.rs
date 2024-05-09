@@ -36,7 +36,7 @@ impl State {
         State {
             pos_x: x,
             pos_y: y,
-            direction: direction,
+            direction,
             secd: self.secd,
             scd: self.scd,
             ecd: self.ecd,
