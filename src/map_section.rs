@@ -5,10 +5,13 @@ use std::{collections::{HashMap},
 
 #[derive(Debug)]
 pub struct MapSection {
+    #[allow(dead_code)]
     floor: usize,
     x_start: usize,
+    #[allow(dead_code)]
     x_end: usize,
     y_start: usize,
+    #[allow(dead_code)]
     y_end: usize,
     se_data: Array3<u8>,
     walk_hashmap: HashMap<(u16, u16), Vec<(u16, u16, u8)>>,

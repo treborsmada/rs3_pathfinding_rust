@@ -3,4 +3,3 @@ pub mod map_section;
 pub mod util;
 pub mod preprocessing;
 pub mod pathfinding;
-pub mod pathfinding2_test;

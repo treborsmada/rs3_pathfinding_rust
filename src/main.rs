@@ -1,4 +1,4 @@
-use rs3_pathfinding::{map_section, pathfinding, state, pathfinding2_test};
+use rs3_pathfinding::{map_section, pathfinding, state};
 use std::cmp::{max, min};
 use std::time::{Instant};
 
@@ -24,7 +24,7 @@ fn main() {
                                                               max(start.pos_y as usize, end.1 as usize) + radius, floor);
     let heuristic = pathfinding::Heuristic::new();
     let now = Instant::now();
-    let (path, moves)  = pathfinding2_test::a_star_end_buffer(start, end, &section, heuristic);
+    let (path, moves)  = pathfinding::a_star_end_buffer(start, end, &section, heuristic);
     let elapsed = now.elapsed();
     println!("{:?}", moves);
     println!("{:?}", path);
